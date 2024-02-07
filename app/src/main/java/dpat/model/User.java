@@ -1,8 +1,10 @@
 package main.java.dpat.model;
 
-@Entity
-@Getter @Setter @NoArgsConstructor
-
+import main.java.dpat.model.PasswordManager;
+// import lombok.Getter;
+// import lombok.Setter;
+// import lombok.NoArgsConstructor;
+//
 public class User {
     private String username;
     private String masterPassword;
@@ -12,8 +14,11 @@ public class User {
         this.masterPassword = masterPassword;
     }
 
+
     public boolean login(String username, String password) {
-        // In a real scenario, this method would interact with PasswordManager
-        return PasswordManager.getInstance().validateLogin(username, password);
+        // Validate the login
+        PasswordManager passwordManager = new PasswordManager();
+        return passwordManager.validateLogin(username, password);
     }
 }
+
