@@ -14,11 +14,8 @@ public class User {
         this.masterPassword = masterPassword;
     }
 
-
-    public boolean login(String username, String password) {
-        // Validate the login
-        PasswordManager passwordManager = new PasswordManager();
-        return passwordManager.validateLogin(username, password);
+    public boolean validateMasterPassword(String inputPassword) {
+        return this.masterPassword.equals(inputPassword);
     }
 }
 

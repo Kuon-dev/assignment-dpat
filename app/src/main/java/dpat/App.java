@@ -1,11 +1,13 @@
 package dpat;
 
 import main.java.dpat.model.PasswordManager;
+import main.java.dpat.model.User;
 import java.util.Scanner;
 
 public class App {
-    private static PasswordManager passwordManager = new PasswordManager();
-    
+    private static final User defaultUser = new User("defaultUser", "masterPass");
+    private static final PasswordManager passwordManager = new PasswordManager();
+
     public static void main(String[] args) {
         Scanner scanner = new Scanner(System.in);
         while (true) {
@@ -18,14 +20,12 @@ public class App {
             if ("1".equals(option)) {
                 System.out.print("Enter username: ");
                 String username = scanner.nextLine();
-                System.out.print("Enter password: ");
+                System.out.print("Enter master password: ");
                 String password = scanner.nextLine();
 
-                // Assuming you have a way to validate the user's login, possibly through the PasswordManager
-                if (passwordManager.validateLogin(username, password)) {
+                if ("defaultUser".equals(username) && defaultUser.validateMasterPassword(password)) {
                     System.out.println("Login successful.");
-                    // Here you can proceed to the next part of your application
-                    break; // Or continue in the app
+                    passwordManager.view(); // Display PasswordManager options instead of exiting
                 } else {
                     System.out.println("Login failed. Please try again.");
                 }
