@@ -44,3 +44,12 @@ tasks.named<Test>("test") {
     // Use JUnit Platform for unit tests.
     useJUnitPlatform()
 }
+tasks.jar {
+    manifest {
+        attributes(
+            "Main-Class" to "dpat.App"
+        )
+    }
+    // This line ensures that the compiled classes and resources are included in the JAR
+    from(configurations.runtimeClasspath.get().map { if (it.isDirectory) it else zipTree(it) }, project.sourceSets.main.get().output)
+}
