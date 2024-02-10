@@ -1,71 +1,44 @@
 package main.java.dpat.model;
 
-import javax.crypto.Cipher;
-import javax.crypto.KeyGenerator;
-import javax.crypto.SecretKey;
-import javax.crypto.spec.SecretKeySpec;
-import java.security.NoSuchAlgorithmException;
-import java.util.Map;
-import java.util.HashMap;
-import java.util.Base64;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
+import main.java.dpat.model.security.passwordstore.PasswordStore;
+import main.java.dpat.model.security.passwordstore.BasicPasswordStore;
+import main.java.dpat.model.security.passwordstore.decorators.EncryptedPasswordStore;
+import main.java.dpat.model.security.KeyFactory;
+import main.java.dpat.model.security.UniqueKeyFactory;
 import java.util.regex.Pattern;
 import java.util.Scanner;
-import java.util.stream.Collectors;
+import java.util.regex.Matcher;
+import java.util.List;
 
 public class PasswordManager {
-    // private List<PasswordEntry> passwords;
-    private String encryptionAlgorithm;
-    private SecretKey secretKey;
-    private Map<String, String> passwords = new HashMap<>();
+    private PasswordStore passwordStore;
+    private KeyFactory keyFactory;
+    private String encryptionAlgorithm = "AES"; // Default encryption algorithm
 
     public PasswordManager() {
-        this.configureEncryptionSettings("AES");
-        this.encryptionAlgorithm = "AES";
-        this.secretKey = generateKey();
+        this.keyFactory = new UniqueKeyFactory();
+        this.initializePasswordStore();
     }
 
-    private SecretKey generateKey() {
-        try {
-            KeyGenerator keyGenerator = KeyGenerator.getInstance(encryptionAlgorithm);
-            keyGenerator.init(256); // Use 256-bit AES for encryption
-            return keyGenerator.generateKey();
-        } catch (NoSuchAlgorithmException e) {
-            throw new RuntimeException("Failed to generate encryption key", e);
-        }
-    }
-
-    private String encryptPassword(String password) throws Exception {
-        Cipher cipher = Cipher.getInstance(encryptionAlgorithm);
-        cipher.init(Cipher.ENCRYPT_MODE, secretKey);
-        byte[] encryptedBytes = cipher.doFinal(password.getBytes());
-        return Base64.getEncoder().encodeToString(encryptedBytes);
-    }
-
-    private String decryptPassword(String encryptedPassword) throws Exception {
-        Cipher cipher = Cipher.getInstance(encryptionAlgorithm);
-        cipher.init(Cipher.DECRYPT_MODE, secretKey);
-        byte[] decryptedBytes = cipher.doFinal(Base64.getDecoder().decode(encryptedPassword));
-        return new String(decryptedBytes);
+    private void initializePasswordStore() {
+        PasswordStore basicStore = new BasicPasswordStore();
+        this.passwordStore = new EncryptedPasswordStore(basicStore, encryptionAlgorithm, keyFactory);
     }
 
     public void addPasswordEntry(String siteName, String password) throws Exception {
-        String encryptedPassword = encryptPassword(password);
-        passwords.put(siteName, encryptedPassword);
+        passwordStore.addPasswordEntry(siteName, password);
     }
 
     public String retrievePassword(String siteName) throws Exception {
-        String encryptedPassword = passwords.get(siteName);
-        if (encryptedPassword == null) {
-            return null; // Or throw an exception if preferred
+        String password = passwordStore.retrievePassword(siteName);
+        if (password == null) {
+            throw new Exception("Password for the site '" + siteName + "' does not exist.");
         }
-        return decryptPassword(encryptedPassword);
+        return password;
     }
 
     public void deletePasswordEntry(String siteName) {
-        passwords.remove(siteName);
+        passwordStore.deletePasswordEntry(siteName);
     }
 
     public boolean validatePassword(String password) {
@@ -74,73 +47,98 @@ public class PasswordManager {
         return Pattern.compile(passwordPattern).matcher(password).matches();
     }
 
-    public void configureEncryptionSettings(String encryptionAlgorithm) {
-        if ("AES".equals(encryptionAlgorithm) || "DES".equals(encryptionAlgorithm)) {
-            this.encryptionAlgorithm = encryptionAlgorithm;
-            this.secretKey = generateKey(); // Re-generate key based on new algorithm
-        } else {
-            throw new IllegalArgumentException("Unsupported encryption algorithm: " + encryptionAlgorithm);
-        }
-    }
+    public void view(Scanner scanner) {
+        String ANSI_RESET = "\u001B[0m";
+        String ANSI_RED = "\u001B[31m";
+        String ANSI_GREEN = "\u001B[32m";
+        String ANSI_BLUE = "\u001B[34m";
 
-    public boolean validateLogin(String username, String password) {
-        try {
-            String encryptedPassword = passwords.get(username);
-            if (encryptedPassword == null) {
-                return false; // Username not found
-            }
-            String decryptedPassword = decryptPassword(encryptedPassword);
-            return decryptedPassword.equals(password);
-        } catch (Exception e) {
-            System.out.println("Error during login validation: " + e.getMessage());
-            return false;
-        }
-    }
-
-    public void view() {
-        Scanner scanner = new Scanner(System.in);
         int option = 0;
-
         while (option != 7) {
+            System.out.println("----------------------------------");
             System.out.println("\nPassword Manager Menu:");
             System.out.println("1. Add Password Entry");
             System.out.println("2. Retrieve Password");
             System.out.println("3. Delete Password Entry");
             System.out.println("4. Validate Password");
-            System.out.println("5. Configure Encryption Settings");
-            System.out.println("6. List All Passwords"); // Changed from 'Exit' to 'List All Passwords'
-            System.out.println("7. Return to Main Menu"); // New option to exit this view
+            System.out.println("5. List All Sites");
+            System.out.println("6. Exit");
+            System.out.println("----------------------------------");
             System.out.print("Select an option (1-7): ");
-
             try {
                 option = Integer.parseInt(scanner.nextLine());
-
+            } catch (NumberFormatException e) {
+                System.out.println(ANSI_RED + "Please enter a valid number." + ANSI_RESET);
+                continue;
+            }
+            try {
                 switch (option) {
-                    // Other case implementations remain unchanged...
-
-                    case 6: // Updated to list all passwords in a table format
-                        System.out.println("Stored Passwords:");
-                        System.out.printf("%-20s %s%n", "Site Name", "Password");
-                        passwords.forEach((site, encryptedPassword) -> {
-                            try {
-                                String decryptedPassword = decryptPassword(encryptedPassword);
-                                System.out.printf("%-20s %s%n", site, decryptedPassword);
-                            } catch (Exception e) {
-                                System.out.println("Error decrypting password for: " + site);
-                            }
-                        });
+                    case 1:
+                        System.out.flush();
+                        System.out.println("Enter site name:");
+                        String site = scanner.nextLine();
+                        System.out.println("Enter password:");
+                        String newPassword = scanner.nextLine();
+                        if (validatePassword(newPassword)) {
+                            addPasswordEntry(site, newPassword);
+                            System.out.println(ANSI_GREEN + "Password entry added." + ANSI_RESET);
+                        } else {
+                            System.out.println(ANSI_RED + "Password does not meet the criteria." + ANSI_RESET);
+                        }
                         break;
-                    case 7: // New case to exit the view
-                        System.out.println("Returning to main menu...");
-                        return; // Exit the view method
+                    case 2:
+                        System.out.println(ANSI_BLUE + "Enter site name to retrieve password:" + ANSI_RESET);
+                        try {
+                            String siteToRetrieve = scanner.nextLine();
+                            String retrievedPassword = retrievePassword(siteToRetrieve);
+                            System.out.println(ANSI_GREEN + "Success: Password for " + siteToRetrieve + ": " + retrievedPassword + ANSI_RESET);
+                        } catch (Exception e) {
+                            System.out.println(ANSI_RED + "Error: " + e.getMessage() + ANSI_RESET);
+                        }                        
+                        break;
+                    case 3:
+                        System.out.println(ANSI_BLUE + "Enter site name to delete password entry:" + ANSI_RESET);
+                        String siteToDelete = scanner.nextLine();
+                        deletePasswordEntry(siteToDelete);
+                        System.out.println(ANSI_BLUE + "Password entry deleted." + ANSI_RESET);
+                        break;
+                    case 4:
+                        System.out.println("Enter password to validate:");
+                        String passwordToValidate = scanner.nextLine();
+                        if (validatePassword(passwordToValidate)) {
+                            System.out.println(ANSI_BLUE + "Password is strong." + ANSI_RESET);
+                        } else {
+                            System.out.println(ANSI_RED + "Password is weak." + ANSI_RESET);
+                        }
+                        break;
+                    case 5:
+                        listSiteNames();
+                        break;
+                    case 6:
+                        System.out.println("Exiting...");
+                        return;
                     default:
                         System.out.println("Invalid option. Please try again.");
+                        break;
                 }
             } catch (Exception e) {
                 System.out.println("An error occurred: " + e.getMessage());
-                option = 0; // Ensure the menu is displayed again
+            }
+        }
+    }
+
+    private void listSiteNames() {
+        String ANSI_RESET = "\u001B[0m";
+        String ANSI_BLUE = "\u001B[34m";
+
+        System.out.println("Stored Sites:");
+        List<String> siteNames = passwordStore.getSiteNames();
+        if (siteNames.isEmpty()) {
+            System.out.println("No sites stored.");
+        } else {
+            for (String site : siteNames) {
+                System.out.println(ANSI_BLUE + site + ANSI_RESET);
             }
         }
     }
 }
-

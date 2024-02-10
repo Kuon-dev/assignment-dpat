@@ -13,9 +13,5 @@ public class User {
         this.username = username;
         this.masterPassword = masterPassword;
     }
-
-    public boolean validateMasterPassword(String inputPassword) {
-        return this.masterPassword.equals(inputPassword);
-    }
 }
 
