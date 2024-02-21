@@ -1,9 +1,7 @@
 package dpat;
 
-import main.java.dpat.model.PasswordEntry;
 import main.java.dpat.model.PasswordManager;
 import main.java.dpat.model.LoginManager;
-import main.java.dpat.model.User;
 import java.util.Scanner;
 
 public class App {
