@@ -43,8 +43,8 @@ public class PasswordManager {
 
     public boolean validatePassword(String password) {
         // Example criteria: at least 8 characters, contains a digit, a lowercase, an uppercase, and a special character
-        String passwordPattern = "^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[@#$%^&+=])(?=\\S+$).{8,}$";
-        return Pattern.compile(passwordPattern).matcher(password).matches();
+        String regex = "^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[@#$%^&+=])(?=\\S+$).{8,}$";
+        return Pattern.compile(regex).matcher(password).matches();
     }
 
     public void view(Scanner scanner) {

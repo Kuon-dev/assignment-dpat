@@ -22,7 +22,7 @@ dependencies {
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 
     // This dependency is used by the application.
-    implementation(libs.guava)
+    // implementation(libs.guava)
 
     implementation("org.projectlombok:lombok:1.18.22") // Use the latest version available
     annotationProcessor("org.projectlombok:lombok:1.18.22")
